@@ -1,24 +1,86 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-function classifyLog(logLine: string): { explanation: string, suggestion: string } {
-  if (logLine.includes('AH00112')) {
+function classifyLog(logLine: string): { explanation: string, suggestion: string, isServiceStatus: boolean } {
+  if (logLine.includes('Apache service started')) {
     return {
-      explanation: 'The error "AH00112" typically occurs when Apache cannot bind to the specified port, often due to a conflict with another process.',
-      suggestion: 'Check if another application (like Skype or another web server) is using port 80, and try changing the port in your XAMPP settings.'
+      explanation: 'Apache service has started successfully.',
+      suggestion: 'You can access your local server via localhost.',
+      isServiceStatus: true,
     };
   }
-  
-  if (logLine.includes('InnoDB:')) {
+  if (logLine.includes('Apache service stopped')) {
     return {
-      explanation: 'This error is related to the InnoDB storage engine in MySQL.',
-      suggestion: 'Try restarting MySQL. If the issue persists, check for any corruption in your MySQL databases.'
+      explanation: 'Apache service has been stopped.',
+      suggestion: 'To restart Apache, click the "Start" button in XAMPP.',
+      isServiceStatus: true,
+    };
+  }
+
+  if (logLine.includes('MySQL service started')) {
+    return {
+      explanation: 'MySQL service has started successfully.',
+      suggestion: 'You can now connect to your database.',
+      isServiceStatus: true,
+    };
+  }
+  if (logLine.includes('MySQL service stopped')) {
+    return {
+      explanation: 'MySQL service has been stopped.',
+      suggestion: 'To restart MySQL, click the "Start" button in XAMPP.',
+      isServiceStatus: true,
+    };
+  }
+
+  if (logLine.includes('FileZilla Server Started')) {
+    return {
+      explanation: 'FileZilla FTP service has started.',
+      suggestion: 'You can now connect via FTP to your server.',
+      isServiceStatus: true,
+    };
+  }
+  if (logLine.includes('FileZilla Server Stopped')) {
+    return {
+      explanation: 'FileZilla FTP service has stopped.',
+      suggestion: 'To restart FileZilla, click the "Start" button in XAMPP.',
+      isServiceStatus: true,
+    };
+  }
+
+  if (logLine.includes('Mercury service started')) {
+    return {
+      explanation: 'Mercury Mail service has started.',
+      suggestion: 'You can now send/receive mail using Mercury.',
+      isServiceStatus: true,
+    };
+  }
+  if (logLine.includes('Mercury service stopped')) {
+    return {
+      explanation: 'Mercury Mail service has stopped.',
+      suggestion: 'To restart Mercury, click the "Start" button in XAMPP.',
+      isServiceStatus: true,
+    };
+  }
+
+  if (logLine.includes('Tomcat service started')) {
+    return {
+      explanation: 'Tomcat service has started successfully.',
+      suggestion: 'You can access your web applications running on Tomcat.',
+      isServiceStatus: true,
+    };
+  }
+  if (logLine.includes('Tomcat service stopped')) {
+    return {
+      explanation: 'Tomcat service has been stopped.',
+      suggestion: 'To restart Tomcat, click the "Start" button in XAMPP.',
+      isServiceStatus: true,
     };
   }
 
   return {
     explanation: 'This is a general log message from XAMPP.',
-    suggestion: 'Please review the context of the error to determine the next steps.'
+    suggestion: 'Please review the context of the error to determine the next steps.',
+    isServiceStatus: false,
   };
 }
 
@@ -34,13 +96,21 @@ export function watchLogFiles(logFilePaths: string[], outputChannel: vscode.Outp
 
           const logLines = data.split('\n');
           logLines.forEach(line => {
-            const { explanation, suggestion } = classifyLog(line);
+            const { explanation, suggestion, isServiceStatus } = classifyLog(line);
 
-            outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] ${logFilePath}:`);
-            outputChannel.appendLine(`Log: ${line}`);
-            outputChannel.appendLine(`Explanation: ${explanation}`);
-            outputChannel.appendLine(`Suggestion: ${suggestion}`);
-            outputChannel.appendLine('------------------------------------------------------');
+            if (isServiceStatus) {
+              outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] Service Status:`);
+              outputChannel.appendLine(`Log: ${line}`);
+              outputChannel.appendLine(`Explanation: ${explanation}`);
+              outputChannel.appendLine(`Suggestion: ${suggestion}`);
+              outputChannel.appendLine('------------------------------------------------------');
+            } else {
+              outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] ${logFilePath}:`);
+              outputChannel.appendLine(`Log: ${line}`);
+              outputChannel.appendLine(`Explanation: ${explanation}`);
+              outputChannel.appendLine(`Suggestion: ${suggestion}`);
+              outputChannel.appendLine('------------------------------------------------------');
+            }
           });
         });
       }
